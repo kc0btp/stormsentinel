@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 """
-StormSiren
+StormSentinel
 
-StormSiren is a utility for scanning severe weather bulletins issued 
+StormSentinel is a utility for scanning severe weather bulletins issued 
 by the National Weather Service and sending notification via pager,
 wireless phone or e-mail when there is an outbreak or potential for
 severe weather.
@@ -93,27 +93,27 @@ class wxalert:
 # Program configuration information
 if os.name == 'posix':
   home_dir     = os.environ.get('HOME')
-  config_dir   = home_dir + '/.StormSiren'
+  config_dir   = home_dir + '/.StormSentinel'
 elif os.name == 'os2':
   home_dir     = os.environ.get('HOME')
-  config_dir   = home_dir + '/StormSiren'
+  config_dir   = home_dir + '/StormSentinel'
 elif os.name == 'nt':
   home_dir     = os.environ.get('USERPROFILE') # NT/2K/XP
   if home_dir == None:
     home_dir = os.environ.get('WINDIR') # 95/98/ME
-  config_dir   = home_dir + '/Application Data/StormSiren'
+  config_dir   = home_dir + '/Application Data/StormSentinel'
 
 if not os.path.exists(config_dir):
   os.mkdir(config_dir)
 
-config_file  = os.path.normpath(config_dir + '/StormSiren.conf')
-log_file     = os.path.normpath(config_dir + '/StormSiren.log')
-state_file   = os.path.normpath(config_dir + '/StormSiren.state')
+config_file  = os.path.normpath(config_dir + '/StormSentinel.conf')
+log_file     = os.path.normpath(config_dir + '/StormSentinel.log')
+state_file   = os.path.normpath(config_dir + '/StormSentinel.state')
 log_buffer   = []
 interactive_copyright = """
-StormSiren version """ + __version__ + """
+StormSentinel version """ + __version__ + """
 Copyright (C) 2011 Brandon Pierce
-StormSiren comes with ABSOLUTELY NO WARRANTY;
+StormSentinel comes with ABSOLUTELY NO WARRANTY;
 This is free software, and you are welcome to redistribute it
 under certain conditions; see the included license file for details.
 """
@@ -224,14 +224,14 @@ try:
   if error_string:
     print '*ERROR* - ' + error_string
     print 'You may want to remove the file' + config_file
-    print 'and then rerun StormSiren.py to regenerate it.'
+    print 'and then rerun StormSentinel.py to regenerate it.'
     sys.exit(1)
 
 # If config file doesn't exist, build one for them!
 except IOError:
   print interactive_copyright
   print """
-Welcome to the StormSiren configuration wizard.
+Welcome to the StormSentinel configuration wizard.
 
 This program scans the severe weather bulletins issued by the National Weather
 Weather Service and sends alerts in the form of text messages to your pager,
@@ -332,7 +332,7 @@ weather_data = []
 
 # Note program initialization
 if debug_level >= 2:
-  print "StormSiren initiated"
+  print "StormSentinel initiated"
 
 # Build list of URLs to fetch.
 for i in range(len(states)):
@@ -585,8 +585,8 @@ try:
 	
 # Create mail server object
     msg_headers = 'From: ' + email_address + '\n'
-    msg_headers = msg_headers + 'Subject: StormSiren Alert\n'
-    msg_headers = msg_headers + 'X-Mailer: StormSiren ' + __version__ + '\n\n'
+    msg_headers = msg_headers + 'Subject: StormSentinel Alert\n'
+    msg_headers = msg_headers + 'X-Mailer: StormSentinel ' + __version__ + '\n\n'
     
     if sms_recp:
       msg_address  = 'To: ' + sms_recp + '\n'
@@ -632,7 +632,7 @@ if debug_level == 1:
 
 for i in range(len(log_buffer)):  
   if debug_level == 1:
-    logw.write("StormSiren " + now + ": " + log_buffer[i] + "\n")
+    logw.write("StormSentinel " + now + ": " + log_buffer[i] + "\n")
   elif debug_level > 1:
     print log_buffer[i]
 
