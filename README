@@ -1,0 +1,3 @@
+Much like the original StormSiren, StormSiren is a simple script capable of scanning and providing notifications of weather bulletins issued by the National Weather Service. StormSiren supports a wide range of paging devices (Email, SMS, Jabber Instant Messaging, playing sound files, external program execution, MythTV visual alerts, and OSD - On Screen Display - visual alerts) and filtering of alert types per alert device.
+
+This is based on a rewrite by cfreeze (http://www.cfreeze.com) of the original StormSiren first created by Rory McManus, <slorf@users\sourceforge/org>. Since the project has been dormant on SourceForge since 2008, I thought I'd take it and try to make a few improvements, and use it as a learning project.

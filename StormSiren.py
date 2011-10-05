@@ -6,14 +6,15 @@ StormSiren
 StormSiren is a utility for scanning severe weather bulletins issued 
 by the National Weather Service and sending notification via pager,
 wireless phone or e-mail when there is an outbreak or potential for
-severe weather.
+severe weather. This software was originally released Copyright (c) 2002
+Rory McManus <slorf@users.sourceforge.org>.
 
-Copyright (C) 2002  Rory McManus <slorf@users.sourceforge.org>
+Copyright (C) 2011 Brandon Pierce <brandon.pierce@gmail.com>
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,17 +22,18 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 # Revision and author information
-__author__    = "Rory McManus <slorf@users.sourceforge.net>"
-__date__      = "08 February 2004"
-__version__   = "1.0"
-
-# Credits
-# Ed Blackman for a regular expression patch to match watch variances (0.65)
+__authors__    = "Rory McManus <slorf@users.sourceforge.net>, Brandon Pierce <brandon.pierce@gmail.com>"
+__copyright__  = "Copyright 2011, Brandon Pierce"
+__credits__	   = "Ed Blackman"
+__license__    = "GPL"
+__version__    = "1.0"
+__maintainer__ = "Brandon Pierce"
+__email__      = "brandon.pierce@gmail.com"
+__status__     = "development"
 
 # Import local modules
 import sys
@@ -88,7 +90,6 @@ class wxalert:
 
     return self.valid
 
-
 # Program configuration information
 if os.name == 'posix':
   home_dir     = os.environ.get('HOME')
@@ -111,13 +112,18 @@ state_file   = os.path.normpath(config_dir + '/StormSiren.state')
 log_buffer   = []
 interactive_copyright = """
 StormSiren version """ + __version__ + """
-Copyright (C) 2002 Rory McManus
+Copyright (C) 2011 Brandon Pierce
 StormSiren comes with ABSOLUTELY NO WARRANTY;
 This is free software, and you are welcome to redistribute it
 under certain conditions; see the included license file for details.
 """
 
-# URLs to the National Weather Service data for Minnesota.
+# URLs to the National Weather Service data
+
+# Main: 	http://www.weather.gov/view/states.php?state=[two-letter state code]
+# Watches: 	http://www.weather.gov/view/prodsByState.php?state=[two-letter state code]&prodtype=watches
+# Warnings: http://www.weather.gov/view/prodsByState.php?state=[two-letter state code]&prodtype=warnings
+
 iwin_url     = 'http://iwin.nws.noaa.gov/iwin/'
 watch_url    = '/watches.html'
 warn_url     = '/allwarnings.html'
@@ -131,8 +137,8 @@ device_id           = ''
 notification_system = ''
 email_address       = ''
 smtp_server         = ''
-alert_level         = 2
-debug_level         = 0
+alert_level         = 2			# Use an enum
+debug_level         = 0			# Use an enum
 devices             = {}
 
 # Try to open user configuration file
@@ -140,6 +146,10 @@ try:
   conf_f = open(config_file, 'r')
   config_contents = conf_f.readlines() 
   conf_f.close()
+  
+  print "Config file opened..."
+
+# Set argument for debug to output config options
 
 # Parse config file data
   for i in range(len(config_contents)):
@@ -161,24 +171,44 @@ try:
     if chk_counties:
       xcounties = string.split(config_contents[i][9:], ',')
       for j in range(len(xcounties)):
-        counties.append(string.strip(xcounties[j]))
+        counties.append(string.strip(xcounties[j]))        
     if chk_cities:
       xcities = string.split(config_contents[i][7:], ',')
       for j in range(len(xcities)):
-        cities.append(string.strip(xcities[j]))
+        cities.append(string.strip(xcities[j]))        
     if chk_device:
       device_info = string.split(string.strip(config_contents[i][7:]))
-      devices[device_info[0]] = device_info[1]
+      devices[device_info[0]] = device_info[1]      
     if chk_email:
-      email_address = string.strip(config_contents[i][6:])
+      email_address = string.strip(config_contents[i][6:])      
     if chk_smtp:
-      smtp_server = string.strip(config_contents[i][5:])
+      smtp_server = string.strip(config_contents[i][5:])      
     if chk_alert:
-      alert_level = int(string.strip(config_contents[i][6:]))
+      alert_level = int(string.strip(config_contents[i][6:]))      
     if chk_debug:
       debug_level = int(string.strip(config_contents[i][6:]))
       
-# Validate configuration file.  Lecture user if missing directives.
+  if debug_level >= 2:
+  	print "States:"
+  	for state in states:
+  	  print "\t" + state  	
+  	print "Counties:"
+  	for county in counties:
+  	  print "\t" + county  	  
+  	print "Cities:"
+  	for city in cities:
+  	  print "\t" + city  	
+  	print "Devices:"
+  	print "\t" + device_info[0] + ", " + device_info[1]
+  	print "\t" + devices[device_info[0]]
+  	print "Email:"
+  	print "\t" + email_address
+  	print "SMTP"
+  	print "\t" + smtp_server
+  	print "Debug Level"
+  	print "\t" + str(debug_level)
+
+# Validate configuration file. Lecture user if missing directives.
   error_string = ''
   if not devices:
     error_string = 'No notification device specified.'
@@ -186,8 +216,6 @@ try:
     error_string = 'State or states not specified.'
   elif not counties:
     error_string = 'Counties not specified.'
-
-#  if string.lower(notification_system) == 'smtp':
   elif not email_address:
     error_string = 'Return e-mail address not specified.'
   elif not smtp_server:
@@ -287,7 +315,7 @@ wireless phone and/or electronic mailbox.
   conf_f.write("SMTP: " + smtp + "\n")
   devkeys = devices.keys()
   for i in range(len(devkeys)):
-    conf_f.write("device: " + devkeys[i] + " " + devices[devkeys[i]] + "\n")
+    conf_f.write("DEVICE: " + devkeys[i] + " " + devices[devkeys[i]] + "\n")
   conf_f.write("ALERT: " + alert_level + "\n")
   conf_f.write("DEBUG: " + debug_level + "\n")
   conf_f.close()
@@ -502,6 +530,7 @@ except IndexError:
 for i in range(len(alarms)):
   paged = 0
   wxo = alarms[i]
+  print "wxo: " + wxo
 
 # If there is a state file, open it and check if we've already paged on this
 # bulletin.
@@ -543,10 +572,15 @@ for i in range(len(device_keys)):
 sms_recp = string.join(sms_to, ', ')
 msg_recp = string.join(msg_to, ', ')
 
+for page in page_queue:
+  print page
+
 try:
-  
+  print "Trying to send message..."
   while (page_queue[0]):
+    print "in the while"
     wxp = page_queue.pop(0)
+    print wxp
     alert_count = alert_count + 1
 	
 # Create mail server object
