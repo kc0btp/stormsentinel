@@ -6,10 +6,10 @@ StormSiren
 StormSiren is a utility for scanning severe weather bulletins issued 
 by the National Weather Service and sending notification via pager,
 wireless phone or e-mail when there is an outbreak or potential for
-severe weather. This software was originally released Copyright (c) 2002
-Rory McManus <slorf@users.sourceforge.org>.
+severe weather.
 
-Copyright (C) 2011 Brandon Pierce <brandon.pierce@gmail.com>
+This software was originally released Copyright (c) 2002
+Rory McManus <slorf@users.sourceforge.org>. It was later re-written by cfreeze and published to http://www.cfreeze.com/trac/stormsiren/ where you can currently find his re-write and documentation. Copyright (c) 2011 Brandon Pierce <brandon.pierce@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 # Revision and author information
-__authors__    = "Rory McManus <slorf@users.sourceforge.net>, Brandon Pierce <brandon.pierce@gmail.com>"
+__authors__    = "Rory McManus <slorf@users.sourceforge.net>, cfreeze (http://www.cfreeze.com), Brandon Pierce <brandon.pierce@gmail.com>"
 __copyright__  = "Copyright 2011, Brandon Pierce"
 __credits__	   = "Ed Blackman"
 __license__    = "GPL"
