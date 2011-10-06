@@ -9,7 +9,10 @@ wireless phone or e-mail when there is an outbreak or potential for
 severe weather.
 
 This software was originally released Copyright (c) 2002
-Rory McManus <slorf@users.sourceforge.org>. It was later re-written by cfreeze and published to http://www.cfreeze.com/trac/stormsiren/ where you can currently find his re-write and documentation. Copyright (c) 2011 Brandon Pierce <brandon.pierce@gmail.com>
+Rory McManus <slorf@users.sourceforge.org>. It was later re-written by 
+cfreeze and published to http://www.cfreeze.com/trac/stormsiren/ 
+where you can currently find his re-write and documentation.
+Copyright (c) 2011 Brandon Pierce <brandon.pierce@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,6 +27,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
+# TODO
+# Add APRS support
+# Check into non-email based text message support
+# Add special weather advisory capability
+# Update to use NOAA/NWS CAPS format (e.g. http://alerts.weather.gov/cap/ks.php?x=1)
 
 # Revision and author information
 __authors__    = "Rory McManus <slorf@users.sourceforge.net>, cfreeze (http://www.cfreeze.com), Brandon Pierce <brandon.pierce@gmail.com>"
@@ -43,6 +52,8 @@ import string
 import time
 import urllib
 import smtplib
+# from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
 
 # Build some time stamps
 now = time.strftime("%Y-%m-%d.%H:%M:%S",time.localtime(time.time()))
@@ -73,18 +84,24 @@ class wxalert:
         self.id      = year + '_' + pre_chunks[pre_len - 1]
         self.sms     = self.id +  ' ' + self.warning + ' WARNING '
         self.sms     = self.sms + ' for counties ' + self.counties
+        
         if self.cities:
           self.sms = self.sms + ' cities ' + self.cities
+          
         self.sms = self.sms + 'issued at ' + self.time
+        
         if self.exp:
           self.sms = self.sms + ' expires ' + self.exp
         
       else:
         self.sms = self.id +  ' ' + self.type + ' WATCH '
         self.sms = self.sms + ' for counties ' + self.counties
+        
         if self.cities:
           self.sms = self.sms + ' cities ' + self.cities
+          
         self.sms = self.sms + 'issued at ' + self.time
+        
         if self.exp:
           self.sms = self.sms + ' expires ' + self.exp
 
@@ -230,19 +247,19 @@ try:
 # If config file doesn't exist, build one for them!
 except IOError:
   print interactive_copyright
-  print """
-Welcome to the StormSentinel configuration wizard.
+  print """Welcome to the StormSentinel configuration wizard.
 
 This program scans the severe weather bulletins issued by the National Weather
 Weather Service and sends alerts in the form of text messages to your pager,
 wireless phone and/or electronic mailbox.  
   """
 
-  device_selection = 4
+  device_selection = 9
   while device_selection:
     print "Select a Notification Method."
-    print "1.  Mobile Phone/Pager with an e-mail address"
-    print "2.  Regular Internet E-Mail Address"
+    print "1.  Mobile phone/pager with an e-mail address"
+    print "2.  Regular internet e-mail address"
+    print "3.  APRS notifications"
     print "Enter the number of the notification method to use.  Enter a "
     print "zero (0) if you are all done entering devices."
     print "Method? ",
@@ -252,7 +269,7 @@ wireless phone and/or electronic mailbox.
       print " "
     except ValueError:
       print "\nSorry, that response didn't make sense.\n"
-      device_selection = 4
+      device_selection = 9
       continue
 
     if device_selection == 0:
@@ -263,12 +280,16 @@ wireless phone and/or electronic mailbox.
     elif device_selection == 2:
       notification_system = 'email'
       print "What is your e-mail address? "
+    elif device_selection == 3:
+    	print "<APRS TEXT MESSAGE HOLDER> "
     else:
       print "\nI don't recognize that option, please try again."
-      device_selection = 4
+      device_selection = 9
       continue
+      
     device_id = raw_input()
     devices[device_id] = notification_system
+    
     print " "
 
   print "What state do you live in or wish to monitor?  You can enter multiple "
@@ -276,28 +297,34 @@ wireless phone and/or electronic mailbox.
   print "abbrevion."
   print "States? ",
   states = raw_input()
+  
   print "\nOn which counties would you like to be alerted regarding severe "
   print "weather watches and warnings?  You can enter multiple counties, "
   print "separated by commas."  
   print "Counties? ",
   counties = raw_input()
+  
   print "\nYou can also opt to have specific cities appear in the alert if "
   print "those cities are listed in the NWS bulletins.  Enter multiple cities "
   print "by separating them by commas."
   print "Cities? ",
   cities = raw_input()
+  
   print "\nWhat is your e-mail address?  This is needed for setting the "
   print "originator address for the message?"
   print "E-Mail? ",
   email = raw_input()
+  
   print "\nWhat SMTP server do you use for outbound mail? "
   print "SMTP server? ",
   smtp = raw_input()
+  
   print "\nWhat types of alerts would you like to receive? "
   print "1.  Warnings only (imminent severe weather threat)"
   print "2.  Warnings and watches (approaching or potential threat)"
   print "Alert Level? ",
   alert_level = raw_input()
+  
   print "\nWould you like any debugging information written to the screen "
   print "or to a logfile? "
   print "0.  No logging"
@@ -305,7 +332,9 @@ wireless phone and/or electronic mailbox.
   print "2.  Write to computer screen (stdout)"
   print "Debug Level? ",
   debug_level = raw_input()
+  
   print "\nThanks.  Writing configuration file to " + config_file
+  
   conf_f = open(config_file, 'w')
   conf_f.write("# Autogenerated Storm configuration file\n")
   conf_f.write("STATES: " + str(states) + "\n")
@@ -340,26 +369,35 @@ for i in range(len(states)):
   if alert_level > 1:
     urls.append(iwin_url + states[i] + watch_url)
 
+# If Developer Mode is set, skip pulling live data
 try:
-  if debug_level >= 2:
+  if debug_level >= 2 and debug_level < 9:
     print "Fetching the following urls:"
   for i in range(len(urls)):
-    if debug_level >= 2:
+    if debug_level >= 2 and debug_level < 9:
       print "...fetching " + urls[i] + "..."
-    stormwatch = urllib.urlopen(urls[i])
-    stormwatch_data = stormwatch.readlines()
-    stormwatch.close()
-    weather_data = weather_data + stormwatch_data
-
+    
+    if debug_level < 9:  
+    	stormwatch = urllib.urlopen(urls[i])
+    	stormwatch_data = stormwatch.readlines()
+    	stormwatch.close()
+    
+    # Developer Mode; this will dump A LOT of data to stdout
+    if debug_level == 8:
+	  	for line in stormwatch_data:
+  	 		print line
+    if debug_level < 9:
+  		weather_data = weather_data + stormwatch_data
+    
+# No net connection available, exit.
 except IOError:
-  # No net connection available, exit.
   if debug_level >= 2:
     print "Internet connection not available, exiting"
   else:
     log_buffer.append("Internet connection not available, exiting")
   sys.exit()
   
-# Developer Mode, read data from local saved file on disk
+# Developer Mode; read data from local saved file on disk
 if debug_level == 9:
   print "...fetching test data from local disk..."
   testwatch = open(config_dir + '/testwatch.txt')
@@ -390,24 +428,33 @@ splat_until      = re.compile("^\*\s+UNTIL\s+(.*)$")
 splat_at         = re.compile("^\*\s+AT\s+(.*)\.\.\.(.*)$")
 watch_counties   = re.compile("(INCLUDES|^IN\s+|^...IN\s+)")
 
-# Parse watch data that we retrieved from the NWS
+if debug_level == 2:
+	print "Weather Data Length: " + str(len(weather_data))
+	# print weather_data
+	
+# dl_data = open(config_dir + '/testwatch.txt', 'w')
+# for line in weather_data:
+#	dl_data.write(line)
+
+# The preformatted tags appear to consistently indicate the beginning of each
+# bulletin (the data itself).
 for i in range(len(weather_data)):
+	
   pre_on      = string.count(string.upper(weather_data[i]), '<PRE>')
   pre_off     = string.count(string.upper(weather_data[i]), '</PRE>')
 
-# The preformatted tags appear to consistently indicate the beginning of each
-# bulletin.  The text bulletins are htmlized as far as the presentation pages
-# go, but the data is still preformatted text
+	# Check for an opening <pre>
   if pre_on:
     pre = 1
     wx = wxalert()
+    print weather_data[i][9:]
     wx.bulletin.append(weather_data[i][9:])
     wx.prestring  = weather_data[i]
     watch_count = watch_count + 1
     continue
 
-# Turn pre off if we match a preformatted close tag.  This indicated the end of
-# a bulletin, so we can also package the alarm we were just reading.
+	# Check for a closing <pre>. This indicates the end of a bulletin
+	# so we can also package the alarm we were just reading.
   elif pre_off:
     pre = 0
     valid = wx.validate()
@@ -460,16 +507,19 @@ for i in range(len(weather_data)):
         for j in range(len(cities)):
 	  if string.count(weather_data[i], string.upper(cities[j])):
 	    wx.cities = wx.cities + string.upper(cities[j]) + ' ' 
+	    
 # Match for county
     elif cnty:
         for j in range(len(counties)):
 	  if string.count(weather_data[i], string.upper(counties[j])):
 	    wx.counties = wx.counties + string.upper(counties[j]) + ' '
+	    
 # Warning cities
     if eas_city:
         for j in range(len(cities)):
 	  if string.count(weather_data[i], string.upper(cities[j])):
-	    wx.cities = wx.cities + string.upper(cities[j]) + ' ' 
+	    wx.cities = wx.cities + string.upper(cities[j]) + ' '
+	     
 # Match for counties in warnings
     elif eas_cnty:
         eas_cnty_test = county_pattern.search(weather_data[i])
@@ -530,7 +580,7 @@ except IndexError:
 for i in range(len(alarms)):
   paged = 0
   wxo = alarms[i]
-  print "wxo: " + wxo
+  print "wxo: " + wxo.counties
 
 # If there is a state file, open it and check if we've already paged on this
 # bulletin.
@@ -572,21 +622,18 @@ for i in range(len(device_keys)):
 sms_recp = string.join(sms_to, ', ')
 msg_recp = string.join(msg_to, ', ')
 
-for page in page_queue:
-  print page
-
 try:
   print "Trying to send message..."
   while (page_queue[0]):
-    print "in the while"
     wxp = page_queue.pop(0)
-    print wxp
     alert_count = alert_count + 1
 	
-# Create mail server object
+		# Create mail server object -- DEPRECATED
+    '''
     msg_headers = 'From: ' + email_address + '\n'
     msg_headers = msg_headers + 'Subject: StormSentinel Alert\n'
     msg_headers = msg_headers + 'X-Mailer: StormSentinel ' + __version__ + '\n\n'
+    
     
     if sms_recp:
       msg_address  = 'To: ' + sms_recp + '\n'
@@ -606,7 +653,30 @@ try:
       mailhost = smtplib.SMTP(smtp_server)
       mailhost.sendmail(email_address, msg_to, msg)
       mailhost.quit
-      log_buffer.append('E-Mailed ' + msg_recp + ' on bulletin ' + str(wxp.id))    
+      log_buffer.append('E-Mailed ' + msg_recp + ' on bulletin ' + str(wxp.id)) 
+     '''   
+      
+    # Assemble the e-mail message
+    msg = MIMEMultipart()
+    msg['From'] = email_address
+    msg['To'] = msg_recp
+    msg['Subject'] = 'StormSentinel Alert'
+    msg['X-Mailer'] = 'StormSentinel ' + __version__
+    
+    print "Assembled... "
+    
+    # Send the message via SMTP 
+    mailserver = smtplib.SMTP(smtp_server)
+    mailserver.ehlo()
+    mailserver.starttls()
+    mailserver.ehlo()
+    # mailserver.login(username, password)
+    mailserver.sendmail(email_address, m, msg.as_string())
+    mailserver.close()
+    log_buffer.append('E-Mailed ' + msg_recp + ' on bulletin ' + str(wxp.id)) 
+    
+    print "Test message sent to: " + msg['To']
+
     
 except IndexError:
   log_buffer.append('No more devices available for paging')
