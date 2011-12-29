@@ -552,7 +552,7 @@ for i in range(len(weather_data)):
 # We're in the html formatted presentation stuff, no bulletins there.
   else:
     continue
-
+   	
 # See if we can open the state file.  
 try:
   state = open(state_file, 'r')
@@ -671,7 +671,7 @@ try:
     mailserver.starttls()
     mailserver.ehlo()
     # mailserver.login(username, password)
-    mailserver.sendmail(email_address, m, msg.as_string())
+    mailserver.sendmail(email_address, msg_recp, msg.as_string())
     mailserver.close()
     log_buffer.append('E-Mailed ' + msg_recp + ' on bulletin ' + str(wxp.id)) 
     
